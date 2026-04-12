@@ -1,16 +1,59 @@
-import { AppBar, Toolbar, Typography, Button } from "@mui/material";
+import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 
 function Navbar() {
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Typography variant="h6" style={{ flexGrow: 1 }}>
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        background: "rgba(40, 0, 8, 0.45)",
+        backdropFilter: "blur(10px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            color: "text.primary",
+            fontWeight: 700,
+            letterSpacing: 0.5,
+          }}
+        >
           Ferrari
         </Typography>
 
-        <Button color="inherit">Home</Button>
-        <Button color="inherit">Results</Button>
-        <Button color="inherit">Stats</Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {["Home", "Results", "Stats"].map((item) => (
+            <Button
+              key={item}
+              sx={{
+                color: "text.primary",
+                borderRadius: 0,
+                px: 1,
+                minWidth: "auto",
+                position: "relative",
+                "&::after": {
+                  content: '""',
+                  position: "absolute",
+                  left: 0,
+                  bottom: 4,
+                  width: "100%",
+                  height: "2px",
+                  backgroundColor: "#D4AF37",
+                  transform: "scaleX(0)",
+                  transformOrigin: "left",
+                  transition: "transform 0.2s ease",
+                },
+                "&:hover::after": {
+                  transform: "scaleX(1)",
+                },
+              }}
+            >
+              {item}
+            </Button>
+          ))}
+        </Box>
       </Toolbar>
     </AppBar>
   );
