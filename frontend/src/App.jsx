@@ -1,6 +1,7 @@
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Stats from "./components/Stats";
+import ResultsSection from "./components/ResultsSection";
 import AnimatedBackground from "./components/AnimatedBackground";
 import { Box } from "@mui/material";
 
@@ -12,6 +13,7 @@ function App() {
         <Navbar />
         <Hero />
         <Stats />
+        <ResultsSection />
         <Box sx={{height: "120vh"}}/>
       </Box>
     </>
