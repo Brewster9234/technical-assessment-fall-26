@@ -12,10 +12,16 @@ function App() {
       <AnimatedBackground />
       <Box sx={{position: "relative", zIndex: 1}}>
         <Navbar />
-        <Hero />
+        <div id="hero">
+          <Hero />
+        </div>
         <Stats />
-        <ResultsSection />
-        <ChartSection />
+        <div id="results">
+          <ResultsSection />
+        </div>
+        <div id="stats">
+          <ChartSection />
+        </div>
       </Box>
     </>
   );

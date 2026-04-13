@@ -1,6 +1,20 @@
 import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material";
 
+// each nav item maps to the id of a section on the page
+const navLinks = [
+  { label: "Home", target: "hero" },
+  { label: "Results", target: "results" },
+  { label: "Stats", target: "stats" },
+];
+
 function Navbar() {
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <AppBar
       position="sticky"
@@ -14,19 +28,16 @@ function Navbar() {
       <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
         <Typography
           variant="h6"
-          sx={{
-            color: "text.primary",
-            fontWeight: 700,
-            letterSpacing: 0.5,
-          }}
+          sx={{ color: "text.primary", fontWeight: 700, letterSpacing: 0.5 }}
         >
           Ferrari
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2 }}>
-          {["Home", "Results", "Stats"].map((item) => (
+          {navLinks.map((link) => (
             <Button
-              key={item}
+              key={link.label}
+              onClick={() => scrollToSection(link.target)}
               sx={{
                 color: "text.primary",
                 borderRadius: 0,
@@ -50,7 +61,7 @@ function Navbar() {
                 },
               }}
             >
-              {item}
+              {link.label}
             </Button>
           ))}
         </Box>
