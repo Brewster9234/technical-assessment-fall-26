@@ -3,6 +3,7 @@ import Hero from "./components/Hero";
 import Stats from "./components/Stats";
 import ResultsSection from "./components/ResultsSection";
 import AnimatedBackground from "./components/AnimatedBackground";
+import ChartSection from './components/ChartSection'
 import { Box } from "@mui/material";
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
         <Hero />
         <Stats />
         <ResultsSection />
-        <Box sx={{height: "120vh"}}/>
+        <ChartSection />
       </Box>
     </>
   );
