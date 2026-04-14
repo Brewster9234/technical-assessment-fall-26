@@ -25,7 +25,7 @@ function ChartSection() {
     try {
       const backendUrl =
         import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-      const response = await fetch(`${backendUrl}/api/ferrari-points?year=2024`);
+      const response = await fetch(`${backendUrl}/api/ferrari-points?year=2025`)
 
       if (!response.ok) {
         setError("error fetching points data");
@@ -116,7 +116,7 @@ function ChartSection() {
           />
 
           <Typography sx={{ color: "text.secondary", maxWidth: 600 }}>
-            Ferrari's cumulative championship points after each race of the 2024 season.
+             Points Ferrari scored in each race of the 2025 season.
           </Typography>
         </Box>
 

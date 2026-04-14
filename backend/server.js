@@ -42,7 +42,7 @@ app.get('/api/ferrari-points', async (req, res) => {
       return res.status(200).json(cachedPoints)
     }
 
-    const year = req.query.year || 2024
+    const year = req.query.year || 2025
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -82,7 +82,8 @@ app.get('/api/ferrari-points', async (req, res) => {
         pointsData.push({
           location: session.location,
           session_key: session.session_key,
-          points: champ[0].points_current,
+          // points gained this race = current minus what they started with
+          points: champ[0].points_current - champ[0].points_start,
         })
       } catch (err) {
         console.log(`Skipping session ${session.session_key}:`, err.message)
