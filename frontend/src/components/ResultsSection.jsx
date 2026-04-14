@@ -1,150 +1,82 @@
 import { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  Container,
-  TextField,
-  Typography,
-  InputAdornment,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import { Box, Button, Container, TextField, Typography } from "@mui/material";
 
-// how many rows to show per page
 const ROWS_PER_PAGE = 20;
+
+// formats "2026-03-06T15:00:00+00:00" into "Mar 6, 2026"
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
+function formatDate(dateString) {
+  if (!dateString) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(dateString));
+}
 
 function ResultsSection() {
   const [allRaces, setAllRaces] = useState([]);
-
-  // I added a loading state here — I saw this pattern in the reference
-  // project where they used locationLoaded to wait for async data
-  // before rendering the main UI
   const [dataLoaded, setDataLoaded] = useState(false);
-
-  // if the fetch fails, show an error message instead of a blank table
-  const [error, setError] = useState("");
-
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
-  // I pulled this pattern from the reference project — they defined
-  // their fetch as a separate named async function (getSimilarPlace)
-  // rather than chaining .then() directly inside useEffect
-  const fetchRaceData = async () => {
+  // async function pattern reference project (background.jsx)
+  const fetchRaceResults = async () => {
     try {
-      // I'm using import.meta.env for the backend URL — same approach
-      // as the reference project used for VITE_BACKEND_URL
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-      const response = await fetch(`${backendUrl}/api/ferrari-results`);
-
-      if (!response.ok) {
-        console.log("error fetching race data");
-        setError("error fetching race data");
-        return;
-      }
-
+      const response = await fetch(`${backendUrl}/api/ferrari-race-results?year=2026`);
       const data = await response.json();
-      setAllRaces(data.reverse());
+      setAllRaces(data);
     } catch (err) {
-      console.error("error fetching race data:", err);
-      setError("error fetching race data");
+      console.error("error fetching race results:", err);
     } finally {
-      // whether or not the fetch worked, we're done loading
       setDataLoaded(true);
     }
   };
 
-  // call the fetch function once when the component mounts
   useEffect(() => {
-    fetchRaceData();
+    fetchRaceResults();
   }, []);
 
-  // reset to page 1 whenever the user types a new search
+  // reset to page 1 whenever search changes
   useEffect(() => {
     setCurrentPage(0);
   }, [searchTerm]);
 
-  // filter results based on what the user typed
   const filteredRaces = allRaces.filter((race) => {
-    const query = searchTerm.toLowerCase();
+    const q = searchTerm.toLowerCase();
     return (
-      race.location.toLowerCase().includes(query) ||
-      race.country_name.toLowerCase().includes(query) ||
-      race.session_name.toLowerCase().includes(query) ||
-      String(race.year).includes(query)
+      race.circuit?.toLowerCase().includes(q) ||
+      String(race.year).includes(q)
     );
   });
 
   const totalPages = Math.ceil(filteredRaces.length / ROWS_PER_PAGE);
-
-  const rowsOnThisPage = filteredRaces.slice(
+  const pageRows = filteredRaces.slice(
     currentPage * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE + ROWS_PER_PAGE
   );
 
   return (
-    <Box sx={{ py: 12 }}>
+    <Box sx={{ py: 10 }}>
       <Container maxWidth="lg">
+        <Typography variant="h3" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, mb: 1 }}>
+          Race Results
+        </Typography>
+        <Box sx={{ width: 60, height: 3, background: "linear-gradient(90deg, #D4AF37, transparent)", mb: 3 }} />
+        <Typography sx={{ color: "text.secondary", mb: 4 }}>
+          Ferrari's 2026 season results — most recent first.
+        </Typography>
 
-        {/* Section label + title */}
-        <Box sx={{ mb: 6 }}>
-          <Typography
-            variant="overline"
-            sx={{
-              color: "#D4AF37",
-              letterSpacing: 6,
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              display: "block",
-              mb: 1,
-            }}
-          >
-            Data Archive
-          </Typography>
-
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: 2,
-              lineHeight: 1,
-              mb: 2,
-            }}
-          >
-            Race Results
-          </Typography>
-
-          {/* gold accent line */}
-          <Box
-            sx={{
-              width: 60,
-              height: 3,
-              background: "linear-gradient(90deg, #D4AF37, transparent)",
-              mb: 3,
-            }}
-          />
-
-          <Typography sx={{ color: "text.secondary", maxWidth: 600 }}>
-            Browse Ferrari's race history. Search by circuit, country, session type, or year.
-          </Typography>
-        </Box>
-
-        {/* Search bar */}
         <TextField
           fullWidth
-          placeholder="Search location, country, session, or year…"
+          placeholder="Search by circuit…"
           variant="outlined"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#D4AF37", fontSize: 20 }} />
-              </InputAdornment>
-            ),
-          }}
           sx={{
-            mb: 3,
+            mb: 2,
+            input: { color: "white" },
             "& .MuiOutlinedInput-root": {
               backgroundColor: "rgba(0,0,0,0.3)",
               borderRadius: 0,
@@ -152,209 +84,94 @@ function ResultsSection() {
               "&:hover fieldset": { borderColor: "#D4AF37" },
               "&.Mui-focused fieldset": { borderColor: "#D4AF37" },
             },
-            input: { color: "white" },
           }}
         />
 
-        {/* result count + page indicator */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-          <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
-            {filteredRaces.length} result{filteredRaces.length !== 1 ? "s" : ""}
-            {searchTerm && ` for "${searchTerm}"`}
-          </Typography>
+        <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", mb: 1.5 }}>
+          {filteredRaces.length} races — page {currentPage + 1} of {Math.max(totalPages, 1)}
+        </Typography>
 
-          {totalPages > 0 && (
-            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
-              Page {currentPage + 1} of {totalPages}
-            </Typography>
-          )}
-        </Box>
+        <Box sx={{ border: "1px solid rgba(212,175,55,0.35)", backgroundColor: "rgba(0,0,0,0.25)" }}>
 
-        {/* Table */}
-        <Box
-          sx={{
-            border: "1px solid rgba(212,175,55,0.35)",
-            backgroundColor: "rgba(0,0,0,0.25)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Header row */}
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1.2fr 1.5fr 1fr",
-              px: 3,
-              py: 1.75,
-              backgroundColor: "rgba(212,175,55,0.15)",
-              borderBottom: "1px solid rgba(212,175,55,0.35)",
-            }}
-          >
-            {["Location", "Year", "Country", "Session"].map((col) => (
-              <Typography
-                key={col}
-                sx={{
-                  fontWeight: 700,
-                  fontSize: "0.72rem",
-                  textTransform: "uppercase",
-                  letterSpacing: 3,
-                  color: "#D4AF37",
-                }}
-              >
+          {/* header */}
+          <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1.3fr 1.3fr 1.3fr 1fr", px: 3, py: 1.5, backgroundColor: "rgba(212,175,55,0.15)", borderBottom: "1px solid rgba(212,175,55,0.35)" }}>
+            {["Circuit", "Date", "Leclerc", "Hamilton", "Total Pts"].map((col) => (
+              <Typography key={col} sx={{ fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 3, color: "#D4AF37" }}>
                 {col}
               </Typography>
             ))}
           </Box>
 
-          {/* Loading state — same idea as locationLoaded in the reference project */}
           {!dataLoaded && (
-            <Box sx={{ px: 3, py: 5, textAlign: "center" }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.3)" }}>
-                Loading race data...
-              </Typography>
-            </Box>
+            <Typography sx={{ px: 3, py: 4, color: "rgba(255,255,255,0.3)" }}>
+              Loading 2026 results...
+            </Typography>
           )}
 
-          {/* Error state — reference project set error messages as state too */}
-          {dataLoaded && error && (
-            <Box sx={{ px: 3, py: 5, textAlign: "center" }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.3)" }}>
-                {error}
-              </Typography>
-            </Box>
+          {dataLoaded && pageRows.length === 0 && (
+            <Typography sx={{ px: 3, py: 4, color: "rgba(255,255,255,0.3)" }}>
+              No results found.
+            </Typography>
           )}
 
-          {/* Data rows */}
-          {dataLoaded && !error && rowsOnThisPage.length > 0 &&
-            rowsOnThisPage.map((race, index) => (
-              <Box
-                key={race.session_key}
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "2fr 1.2fr 1.5fr 1fr",
-                  px: 3,
-                  py: 1.75,
-                  borderBottom:
-                    index < rowsOnThisPage.length - 1
-                      ? "1px solid rgba(255,255,255,0.05)"
-                      : "none",
-                  "&:hover": { backgroundColor: "rgba(212,175,55,0.06)" },
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <Typography sx={{ fontSize: "0.9rem", fontWeight: 500 }}>
-                  {race.location}
-                </Typography>
+          {dataLoaded && pageRows.map((race, i) => (
+            <Box
+              key={i}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1.3fr 1.3fr 1.3fr 1fr",
+                px: 3,
+                py: 1.5,
+                borderBottom: i < pageRows.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                "&:hover": { backgroundColor: "rgba(212,175,55,0.06)" },
+                transition: "background 0.15s ease",
+              }}
+            >
+              <Typography sx={{ fontSize: "0.9rem", fontWeight: 500 }}>{race.circuit}</Typography>
+              <Typography sx={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.6)" }}>{formatDate(race.date)}</Typography>
 
-                <Typography sx={{ fontSize: "0.9rem", color: "#D4AF37", fontWeight: 700 }}>
-                  {race.year}
-                </Typography>
+              {/* Leclerc result */}
+              <Typography sx={{ fontSize: "0.9rem" }}>
+                <span style={{ color: race.driver1_dnf ? "rgba(255,255,255,0.35)" : race.driver1_position === 1 ? "#D4AF37" : "white", fontWeight: race.driver1_position === 1 ? 700 : 400 }}>
+                  {race.driver1_dnf ? "DNF" : `P${race.driver1_position}`}
+                </span>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+                  {!race.driver1_dnf && ` (${race.driver1_points}pts)`}
+                </span>
+              </Typography>
 
-                <Typography sx={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)" }}>
-                  {race.country_name}
-                </Typography>
+              {/* Hamilton result */}
+              <Typography sx={{ fontSize: "0.9rem" }}>
+                <span style={{ color: race.driver2_dnf ? "rgba(255,255,255,0.35)" : race.driver2_position === 1 ? "#D4AF37" : "white", fontWeight: race.driver2_position === 1 ? 700 : 400 }}>
+                  {race.driver2_dnf ? "DNF" : `P${race.driver2_position}`}
+                </span>
+                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+                  {!race.driver2_dnf && ` (${race.driver2_points}pts)`}
+                </span>
+              </Typography>
 
-                <Typography
-                  sx={{
-                    fontSize: "0.8rem",
-                    color: "rgba(255,255,255,0.45)",
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                  }}
-                >
-                  {race.session_name}
-                </Typography>
-              </Box>
-            ))
-          }
-
-          {/* Empty search state */}
-          {dataLoaded && !error && rowsOnThisPage.length === 0 && (
-            <Box sx={{ px: 3, py: 5, textAlign: "center" }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.3)" }}>
-                No results match your search.
+              <Typography sx={{ fontSize: "0.9rem", color: "#D4AF37", fontWeight: 700 }}>
+                {race.total_points}
               </Typography>
             </Box>
-          )}
+          ))}
         </Box>
 
-        {/* Pagination */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mt: 3,
-          }}
-        >
+        {/* pagination */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
           <Button
             variant="outlined"
             disabled={currentPage === 0}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-            sx={{
-              color: "white",
-              borderColor: "rgba(212,175,55,0.35)",
-              borderRadius: 0,
-              px: 3,
-              fontSize: "0.75rem",
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              "&:hover": {
-                borderColor: "#D4AF37",
-                backgroundColor: "rgba(212,175,55,0.15)",
-              },
-              "&.Mui-disabled": {
-                color: "rgba(255,255,255,0.2)",
-                borderColor: "rgba(255,255,255,0.08)",
-              },
-            }}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            sx={{ color: "white", borderColor: "rgba(212,175,55,0.35)", borderRadius: 0, "&:hover": { borderColor: "#D4AF37", backgroundColor: "rgba(212,175,55,0.1)" }, "&.Mui-disabled": { color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)" } }}
           >
             ← Previous
           </Button>
-
-          {/* dot indicators — one per page */}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <Box
-                key={i}
-                onClick={() => setCurrentPage(i)}
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  backgroundColor:
-                    i === currentPage ? "#D4AF37" : "rgba(255,255,255,0.2)",
-                  transition: "background 0.2s ease",
-                  "&:hover": {
-                    backgroundColor:
-                      i === currentPage ? "#D4AF37" : "rgba(255,255,255,0.4)",
-                  },
-                }}
-              />
-            ))}
-          </Box>
-
           <Button
             variant="outlined"
-            disabled={currentPage === totalPages - 1}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            sx={{
-              color: "white",
-              borderColor: "rgba(212,175,55,0.35)",
-              borderRadius: 0,
-              px: 3,
-              fontSize: "0.75rem",
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              "&:hover": {
-                borderColor: "#D4AF37",
-                backgroundColor: "rgba(212,175,55,0.15)",
-              },
-              "&.Mui-disabled": {
-                color: "rgba(255,255,255,0.2)",
-                borderColor: "rgba(255,255,255,0.08)",
-              },
-            }}
+            disabled={currentPage >= totalPages - 1}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            sx={{ color: "white", borderColor: "rgba(212,175,55,0.35)", borderRadius: 0, "&:hover": { borderColor: "#D4AF37", backgroundColor: "rgba(212,175,55,0.1)" }, "&.Mui-disabled": { color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)" } }}
           >
             Next →
           </Button>

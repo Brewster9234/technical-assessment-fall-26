@@ -11,7 +11,6 @@ function Hero() {
             position: "relative",
           }}
         >
-          {/* shorter gold line instead of giant full-height line */}
           <Box
             sx={{
               position: "absolute",

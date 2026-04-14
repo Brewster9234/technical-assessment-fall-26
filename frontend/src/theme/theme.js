@@ -1,8 +1,5 @@
 import { createTheme } from "@mui/material/styles";
 
-// I picked Barlow Condensed for headings — it's a strong, sporty condensed font
-// that fits a racing dashboard. Paired with DM Sans for body text.
-// Both are free on Google Fonts and easy to find in tutorials.
 // https://fonts.google.com/specimen/Barlow+Condensed
 // https://fonts.google.com/specimen/DM+Sans
 
@@ -25,7 +22,6 @@ const theme = createTheme({
     },
   },
   typography: {
-    // DM Sans for body text — clean and readable, easy to find on Google Fonts
     fontFamily: `"DM Sans", "Roboto", sans-serif`,
     h1: {
       fontFamily: `"Barlow Condensed", sans-serif`,
@@ -59,7 +55,6 @@ const theme = createTheme({
       letterSpacing: 1,
     },
   },
-  // set to 0 so everything stays sharp and square — matches the gold border aesthetic
   shape: {
     borderRadius: 0,
   },

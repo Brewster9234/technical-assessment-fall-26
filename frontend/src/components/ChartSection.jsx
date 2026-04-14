@@ -11,21 +11,23 @@ import {
   Cell,
 } from "recharts";
 
-// I referenced Recharts docs for the BarChart + ResponsiveContainer
 // setup: https://recharts.org/en-US/api/BarChart
-// and this beginner walkthrough: https://www.freecodecamp.org/news/how-to-build-a-react-data-visualization-chart/
+// https://www.freecodecamp.org/news/how-to-build-a-react-data-visualization-chart/
 
 function ChartSection() {
   const [pointsData, setPointsData] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState("");
 
-  // same named async function pattern used in the reference project (background.jsx)
+  // async function pattern reference project (background.jsx)
   const fetchPointsData = async () => {
     try {
+      // wait 3 seconds before fetching 
+      await new Promise((resolve) => setTimeout(resolve, 3000))
+
       const backendUrl =
         import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-      const response = await fetch(`${backendUrl}/api/ferrari-points?year=2025`)
+      const response = await fetch(`${backendUrl}/api/ferrari-points?year=2026`)
 
       if (!response.ok) {
         setError("error fetching points data");
@@ -148,8 +150,7 @@ function ChartSection() {
 
           {/* The actual chart */}
           {dataLoaded && !error && pointsData.length > 0 && (
-            // ResponsiveContainer makes the chart resize with the screen —
-            // I found this is the standard way to make Recharts charts responsive
+            // ResponsiveContainer makes the chart resize with the screen
             <ResponsiveContainer width="100%" height={400}>
               <BarChart
                 data={pointsData}
@@ -161,7 +162,7 @@ function ChartSection() {
                   vertical={false}
                 />
 
-                {/* X axis — circuit names, rotated so they don't overlap */}
+                {/* X axis — circuit names */}
                 <XAxis
                   dataKey="location"
                   tick={{
@@ -193,8 +194,7 @@ function ChartSection() {
 
                 <Bar dataKey="points" radius={[2, 2, 0, 0]}>
                   {pointsData.map((entry, index) => (
-                    // alternating between full gold and dimmer gold
-                    // gives the bars some visual rhythm
+                    // alternate between full gold and dimmer gold
                     <Cell
                       key={`cell-${index}`}
                       fill={

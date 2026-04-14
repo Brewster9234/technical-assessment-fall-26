@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 
-// I referenced this Framer Motion tutorial for the animation patterns:
+// Framer Motion tutorial for the animation patterns:
 // https://www.framer.com/motion/animation/
 
 function AnimatedBackground() {

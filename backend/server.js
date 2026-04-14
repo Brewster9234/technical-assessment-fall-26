@@ -15,34 +15,29 @@ app.get('/', (req, res) => {
   res.send('Backend is running')
 })
 
-// fetches all Ferrari race sessions from OpenF1
-app.get('/api/ferrari-results', async (req, res) => {
-  try {
-    const response = await fetch('https://api.openf1.org/v1/sessions?session_name=Race')
-    const data = await response.json()
-    res.status(200).json(data)
-  } catch (error) {
-    console.error('Error fetching race data:', error)
-    res.status(500).json({ message: 'Error fetching race data' })
-  }
-})
+// cache setup
+const CACHE_DURATION = 10 * 60 * 1000
 
-// fetches Ferrari's championship points after each race in a given year
-// fetches one session at a time with a delay to avoid rate limiting from OpenF1
-// simple memory cache so we don't ovelroad the OpenF1 API
+// Ferrari driver numbers by season
+const FERRARI_DRIVERS = {
+  2026: [16, 44], // Leclerc + Hamilton
+  2025: [16, 44], // Leclerc + Hamilton
+  2024: [16, 55], // Leclerc + Sainz
+  2023: [16, 55], // Leclerc + Sainz
+}
+
 let cachedPoints = null
-let cacheTime = null
-const CACHE_DURATION = 10 * 60 * 1000 // 10 minutes
+let cacheTimePoints = null
 
 app.get('/api/ferrari-points', async (req, res) => {
   try {
-    // return cached data if it's less than 10 minutes old
-    if (cachedPoints && cacheTime && Date.now() - cacheTime < CACHE_DURATION) {
-      console.log('Returning cached points data')
-      return res.status(200).json(cachedPoints)
-    }
+    const year = parseInt(req.query.year) || 2025
+    const driverNums = FERRARI_DRIVERS[year] || [16, 44]
 
-    const year = req.query.year || 2025
+    if (cachedPoints && cacheTimePoints && cachedPoints._year === year && Date.now() - cacheTimePoints < CACHE_DURATION) {
+      console.log('Returning cached points data')
+      return res.status(200).json(cachedPoints.data)
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -60,44 +55,125 @@ app.get('/api/ferrari-points', async (req, res) => {
 
     for (const session of sessions) {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 400))
+        await new Promise((resolve) => setTimeout(resolve, 600))
 
-        const champRes = await fetch(
-          `https://api.openf1.org/v1/championship_teams?session_key=${session.session_key}&team_name=Ferrari`
+        const resultsRes = await fetch(
+          `https://api.openf1.org/v1/session_result?session_key=${session.session_key}`
         )
 
-        const contentType = champRes.headers.get('content-type')
-        if (!contentType || !contentType.includes('application/json')) {
+        const contentType = resultsRes.headers.get('content-type')
+        if (!contentType?.includes('application/json')) {
           console.log(`Skipping session ${session.session_key} — not JSON`)
           continue
         }
 
-        const champ = await champRes.json()
-
-        if (!Array.isArray(champ) || champ.length === 0 || !champ[0].points_current) {
-          console.log(`No Ferrari points data for session ${session.session_key}`)
+        const results = await resultsRes.json()
+        if (!Array.isArray(results) || results.length === 0) {
+          console.log(`No results for session ${session.session_key}`)
           continue
         }
 
+        const driver1 = results.find(r => r.driver_number === driverNums[0])
+        const driver2 = results.find(r => r.driver_number === driverNums[1])
+        const totalPoints = (driver1?.points ?? 0) + (driver2?.points ?? 0)
+
         pointsData.push({
-          location: session.location,
+          location: session.circuit_short_name || session.location,
           session_key: session.session_key,
-          // points gained this race = current minus what they started with
-          points: champ[0].points_current - champ[0].points_start,
+          points: totalPoints,
         })
       } catch (err) {
         console.log(`Skipping session ${session.session_key}:`, err.message)
       }
     }
 
-    // save to cache
-    cachedPoints = pointsData
-    cacheTime = Date.now()
+    cachedPoints = { _year: year, data: pointsData }
+    cacheTimePoints = Date.now()
 
     res.status(200).json(pointsData)
   } catch (error) {
     console.error('Error fetching Ferrari points:', error)
     res.status(500).json({ message: 'Error fetching points data' })
+  }
+})
+
+let cachedRaceResults = null
+let cacheTimeResults = null
+
+app.get('/api/ferrari-race-results', async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || 2026
+    const driverNums = FERRARI_DRIVERS[year] || [16, 44]
+
+    if (cachedRaceResults && cacheTimeResults && cachedRaceResults._year === year && Date.now() - cacheTimeResults < CACHE_DURATION) {
+      console.log('Returning cached race results')
+      return res.status(200).json(cachedRaceResults.data)
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    const sessionsRes = await fetch(
+      `https://api.openf1.org/v1/sessions?session_name=Race&year=${year}`
+    )
+    const sessions = await sessionsRes.json()
+
+    if (!Array.isArray(sessions)) {
+      console.error('Sessions response was not an array:', sessions)
+      return res.status(500).json({ message: 'Rate limited — please wait a minute and try again' })
+    }
+
+    const raceResults = []
+
+    for (const session of sessions) {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 600))
+
+        const resultsRes = await fetch(
+          `https://api.openf1.org/v1/session_result?session_key=${session.session_key}`
+        )
+
+        const contentType = resultsRes.headers.get('content-type')
+        if (!contentType?.includes('application/json')) {
+          console.log(`Skipping session ${session.session_key} — not JSON`)
+          continue
+        }
+
+        const results = await resultsRes.json()
+        if (!Array.isArray(results) || results.length === 0) {
+          console.log(`No results for session ${session.session_key}`)
+          continue
+        }
+
+        const driver1 = results.find(r => r.driver_number === driverNums[0])
+        const driver2 = results.find(r => r.driver_number === driverNums[1])
+
+        raceResults.push({
+          circuit: session.circuit_short_name || session.location,
+          date: session.date_start,
+          year: session.year,
+          driver1_position: driver1?.position ?? '—',
+          driver1_points: driver1?.points ?? 0,
+          driver1_dnf: driver1?.dnf ?? false,
+          driver2_position: driver2?.position ?? '—',
+          driver2_points: driver2?.points ?? 0,
+          driver2_dnf: driver2?.dnf ?? false,
+          total_points: (driver1?.points ?? 0) + (driver2?.points ?? 0),
+        })
+      } catch (err) {
+        console.log(`Skipping session ${session.session_key}:`, err.message)
+      }
+    }
+
+    // sort most recent first
+    raceResults.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+    cachedRaceResults = { _year: year, data: raceResults }
+    cacheTimeResults = Date.now()
+
+    res.status(200).json(raceResults)
+  } catch (error) {
+    console.error('Error fetching race results:', error)
+    res.status(500).json({ message: 'Error fetching race results' })
   }
 })
 
