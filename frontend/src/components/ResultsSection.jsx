@@ -3,7 +3,7 @@ import { Box, Button, Container, TextField, Typography } from "@mui/material";
 
 const ROWS_PER_PAGE = 20;
 
-// formats "2026-03-06T15:00:00+00:00" into "Mar 6, 2026"
+// formats "2024-03-02" into "Mar 2, 2024"
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -11,48 +11,52 @@ function formatDate(dateString) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(dateString));
 }
 
 function ResultsSection() {
-  const [allRaces, setAllRaces] = useState([]);
+  const [allResults, setAllResults] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
-  // async function pattern reference project (background.jsx)
-  const fetchRaceResults = async () => {
+  // same named async function pattern as the reference project (background.jsx)
+  const fetchResults = async () => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-      const response = await fetch(`${backendUrl}/api/ferrari-race-results?year=2026`);
+      const response = await fetch(`${backendUrl}/api/ferrari-constructor-results`);
       const data = await response.json();
-      setAllRaces(data);
+      setAllResults(data);
     } catch (err) {
-      console.error("error fetching race results:", err);
+      console.error("error fetching results:", err);
     } finally {
       setDataLoaded(true);
     }
   };
 
   useEffect(() => {
-    fetchRaceResults();
+    fetchResults();
   }, []);
 
-  // reset to page 1 whenever search changes
+  // reset to page 1 whenever the search changes
   useEffect(() => {
     setCurrentPage(0);
   }, [searchTerm]);
 
-  const filteredRaces = allRaces.filter((race) => {
+  // filter by driver name, race name, circuit, or season
+  const filteredResults = allResults.filter((r) => {
     const q = searchTerm.toLowerCase();
     return (
-      race.circuit?.toLowerCase().includes(q) ||
-      String(race.year).includes(q)
+      r.driver?.toLowerCase().includes(q) ||
+      r.race?.toLowerCase().includes(q) ||
+      r.circuit?.toLowerCase().includes(q) ||
+      String(r.season).includes(q)
     );
   });
 
-  const totalPages = Math.ceil(filteredRaces.length / ROWS_PER_PAGE);
-  const pageRows = filteredRaces.slice(
+  const totalPages = Math.ceil(filteredResults.length / ROWS_PER_PAGE);
+  const pageRows = filteredResults.slice(
     currentPage * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE + ROWS_PER_PAGE
   );
@@ -65,12 +69,12 @@ function ResultsSection() {
         </Typography>
         <Box sx={{ width: 60, height: 3, background: "linear-gradient(90deg, #D4AF37, transparent)", mb: 3 }} />
         <Typography sx={{ color: "text.secondary", mb: 4 }}>
-          Ferrari's 2026 season results — most recent first.
+          Every Ferrari race result across all seasons — search by driver, circuit, or year.
         </Typography>
 
         <TextField
           fullWidth
-          placeholder="Search by circuit…"
+          placeholder="Search by driver, race, circuit, or year…"
           variant="outlined"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -88,14 +92,14 @@ function ResultsSection() {
         />
 
         <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", mb: 1.5 }}>
-          {filteredRaces.length} races — page {currentPage + 1} of {Math.max(totalPages, 1)}
+          {filteredResults.length} results — page {currentPage + 1} of {Math.max(totalPages, 1)}
         </Typography>
 
         <Box sx={{ border: "1px solid rgba(212,175,55,0.35)", backgroundColor: "rgba(0,0,0,0.25)" }}>
 
           {/* header */}
-          <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1.3fr 1.3fr 1.3fr 1fr", px: 3, py: 1.5, backgroundColor: "rgba(212,175,55,0.15)", borderBottom: "1px solid rgba(212,175,55,0.35)" }}>
-            {["Circuit", "Date", "Leclerc", "Hamilton", "Total Pts"].map((col) => (
+          <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 0.8fr", px: 3, py: 1.5, backgroundColor: "rgba(212,175,55,0.15)", borderBottom: "1px solid rgba(212,175,55,0.35)" }}>
+            {["Race", "Driver", "Grid", "Finish", "Points", "Year"].map((col) => (
               <Typography key={col} sx={{ fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: 3, color: "#D4AF37" }}>
                 {col}
               </Typography>
@@ -104,7 +108,7 @@ function ResultsSection() {
 
           {!dataLoaded && (
             <Typography sx={{ px: 3, py: 4, color: "rgba(255,255,255,0.3)" }}>
-              Loading 2026 results...
+              Loading results...
             </Typography>
           )}
 
@@ -114,12 +118,12 @@ function ResultsSection() {
             </Typography>
           )}
 
-          {dataLoaded && pageRows.map((race, i) => (
+          {dataLoaded && pageRows.map((result, i) => (
             <Box
               key={i}
               sx={{
                 display: "grid",
-                gridTemplateColumns: "2fr 1.3fr 1.3fr 1.3fr 1fr",
+                gridTemplateColumns: "2fr 1.5fr 1fr 1fr 1fr 0.8fr",
                 px: 3,
                 py: 1.5,
                 borderBottom: i < pageRows.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
@@ -127,31 +131,26 @@ function ResultsSection() {
                 transition: "background 0.15s ease",
               }}
             >
-              <Typography sx={{ fontSize: "0.9rem", fontWeight: 500 }}>{race.circuit}</Typography>
-              <Typography sx={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.6)" }}>{formatDate(race.date)}</Typography>
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{result.race}</Typography>
+              <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>{result.driver}</Typography>
 
-              {/* Leclerc result */}
-              <Typography sx={{ fontSize: "0.9rem" }}>
-                <span style={{ color: race.driver1_dnf ? "rgba(255,255,255,0.35)" : race.driver1_position === 1 ? "#D4AF37" : "white", fontWeight: race.driver1_position === 1 ? 700 : 400 }}>
-                  {race.driver1_dnf ? "DNF" : `P${race.driver1_position}`}
-                </span>
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
-                  {!race.driver1_dnf && ` (${race.driver1_points}pts)`}
-                </span>
+              {/* grid position */}
+              <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                P{result.grid}
               </Typography>
 
-              {/* Hamilton result */}
-              <Typography sx={{ fontSize: "0.9rem" }}>
-                <span style={{ color: race.driver2_dnf ? "rgba(255,255,255,0.35)" : race.driver2_position === 1 ? "#D4AF37" : "white", fontWeight: race.driver2_position === 1 ? 700 : 400 }}>
-                  {race.driver2_dnf ? "DNF" : `P${race.driver2_position}`}
-                </span>
-                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
-                  {!race.driver2_dnf && ` (${race.driver2_points}pts)`}
-                </span>
+              {/* finishing position — gold if P1 */}
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: result.position === "1" ? 700 : 400, color: result.position === "1" ? "#D4AF37" : result.status !== "Finished" && !result.status?.startsWith("+") ? "rgba(255,255,255,0.35)" : "white" }}>
+                {result.status === "Finished" || result.status?.startsWith("+") ? `P${result.position}` : result.status}
               </Typography>
 
-              <Typography sx={{ fontSize: "0.9rem", color: "#D4AF37", fontWeight: 700 }}>
-                {race.total_points}
+              {/* points */}
+              <Typography sx={{ fontSize: "0.85rem", color: result.points > 0 ? "white" : "rgba(255,255,255,0.35)" }}>
+                {result.points > 0 ? result.points : "—"}
+              </Typography>
+
+              <Typography sx={{ fontSize: "0.85rem", color: "#D4AF37", fontWeight: 700 }}>
+                {result.season}
               </Typography>
             </Box>
           ))}

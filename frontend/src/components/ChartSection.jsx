@@ -118,7 +118,7 @@ function ChartSection() {
           />
 
           <Typography sx={{ color: "text.secondary", maxWidth: 600 }}>
-             Points Ferrari scored in each race of the 2025 season.
+             Points Ferrari scored in each race of the 2026 season.
           </Typography>
         </Box>
 

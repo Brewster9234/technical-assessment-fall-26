@@ -20,12 +20,13 @@ const CACHE_DURATION = 10 * 60 * 1000
 
 // Ferrari driver numbers by season
 const FERRARI_DRIVERS = {
-  2026: [16, 44], // Leclerc + Hamilton
-  2025: [16, 44], // Leclerc + Hamilton
-  2024: [16, 55], // Leclerc + Sainz
-  2023: [16, 55], // Leclerc + Sainz
+  2026: [16, 44], // Leclerc-Hamilton
+  2025: [16, 44], // Leclerc-Hamilton
+  2024: [16, 55], // Leclerc-Sainz
+  2023: [16, 55], // Leclerc-Sainz
 }
 
+//CHART: Ferrari points per race 
 let cachedPoints = null
 let cacheTimePoints = null
 
@@ -97,6 +98,90 @@ app.get('/api/ferrari-points', async (req, res) => {
   }
 })
 
+// RESULTS TABLE: All Ferrari constructor results via Jolpica
+// https://api.jolpi.ca/ergast/f1/constructors/ferrari/results.json
+
+let cachedConstructorResults = null
+let cacheTimeConstructorResults = null
+
+app.get('/api/ferrari-constructor-results', async (req, res) => {
+  try {
+    if (cachedConstructorResults && cacheTimeConstructorResults && Date.now() - cacheTimeConstructorResults < CACHE_DURATION) {
+      console.log('Returning cached constructor results')
+      return res.status(200).json(cachedConstructorResults)
+    }
+
+    // paginates at 100 results per request
+    // fetch multiple pages and combine them
+    const allResults = []
+    const limit = 100
+    let offset = 0
+    let totalResults = null
+
+    console.log('Fetching Ferrari constructor results from Jolpica...')
+
+    // keep fetching pages
+    while (true) {
+      const res2 = await fetch(
+        `https://api.jolpi.ca/ergast/f1/constructors/ferrari/results.json?limit=${limit}&offset=${offset}`
+      )
+      const data = await res2.json()
+
+      const table = data?.MRData?.RaceTable?.Races
+      if (!Array.isArray(table)) break
+
+      // on first request grab the total 
+      if (totalResults === null) {
+        totalResults = parseInt(data?.MRData?.total ?? 0)
+        console.log(`Total Ferrari results available: ${totalResults}`)
+      }
+
+      // each Race object contains Results array with one entry per driver
+      for (const race of table) {
+        for (const result of race.Results) {
+          allResults.push({
+            season: race.season,
+            round: parseInt(race.round),
+            race: race.raceName,
+            circuit: race.Circuit?.circuitName,
+            date: race.date,
+            driver: `${result.Driver?.givenName} ${result.Driver?.familyName}`,
+            grid: result.grid,
+            position: result.position,
+            points: parseFloat(result.points),
+            status: result.status,
+          })
+        }
+      }
+
+      offset += limit
+
+      // stop if fetched everything
+      if (offset >= totalResults) break
+
+      // small delay between pages
+      await new Promise((resolve) => setTimeout(resolve, 300))
+    }
+
+    // sort most recent first
+    allResults.sort((a, b) => {
+      if (b.season !== a.season) return parseInt(b.season) - parseInt(a.season)
+      return b.round - a.round
+    })
+
+    console.log(`Done — fetched ${allResults.length} Ferrari results`)
+
+    cachedConstructorResults = allResults
+    cacheTimeConstructorResults = Date.now()
+
+    res.status(200).json(allResults)
+  } catch (error) {
+    console.error('Error fetching constructor results:', error)
+    res.status(500).json({ message: 'Error fetching constructor results' })
+  }
+})
+
+// 2026 RACE RESULTS (for the stats section)
 let cachedRaceResults = null
 let cacheTimeResults = null
 
@@ -164,7 +249,6 @@ app.get('/api/ferrari-race-results', async (req, res) => {
       }
     }
 
-    // sort most recent first
     raceResults.sort((a, b) => new Date(b.date) - new Date(a.date))
 
     cachedRaceResults = { _year: year, data: raceResults }
