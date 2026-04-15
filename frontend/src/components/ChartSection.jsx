@@ -107,7 +107,7 @@ function ChartSection() {
             Points Per Race
           </Typography>
 
-          {/* gold accent line */}
+          {/* gold accent*/}
           <Box
             sx={{
               width: 60,
@@ -148,9 +148,9 @@ function ChartSection() {
             </Box>
           )}
 
-          {/* The actual chart */}
+          {/* da chart */}
           {dataLoaded && !error && pointsData.length > 0 && (
-            // ResponsiveContainer makes the chart resize with the screen
+            // ResponsiveContainer so chart resize with the screen
             <ResponsiveContainer width="100%" height={400}>
               <BarChart
                 data={pointsData}

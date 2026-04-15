@@ -1,7 +1,6 @@
 import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 
-// Framer Motion tutorial for the animation patterns:
 // https://www.framer.com/motion/animation/
 
 function AnimatedBackground() {
@@ -49,7 +48,7 @@ function AnimatedBackground() {
         }}
       />
 
-      {/* subtle accent panel */}
+      {/* randum accent panel */}
       <Box
         component={motion.div}
         animate={{ x: [0, 20, 0] }}
@@ -70,7 +69,7 @@ function AnimatedBackground() {
         }}
       />
 
-      {/* thin white accent */}
+      {/*white accent */}
       <Box
         component={motion.div}
         animate={{ x: [0, -16, 0] }}
@@ -86,7 +85,7 @@ function AnimatedBackground() {
         }}
       />
 
-      {/* gold accent streak — top right */}
+      {/* gold */}
       <Box
         component={motion.div}
         animate={{ x: [0, -20, 0], opacity: [0.18, 0.28, 0.18] }}
@@ -103,7 +102,7 @@ function AnimatedBackground() {
         }}
       />
 
-      {/* gold accent streak — bottom left */}
+      {/* gold accent */}
       <Box
         component={motion.div}
         animate={{ x: [0, 18, 0], opacity: [0.12, 0.22, 0.12] }}

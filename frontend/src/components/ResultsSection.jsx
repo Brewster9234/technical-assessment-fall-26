@@ -21,7 +21,6 @@ function ResultsSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
-  // same named async function pattern as the reference project (background.jsx)
   const fetchResults = async () => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
@@ -39,12 +38,12 @@ function ResultsSection() {
     fetchResults();
   }, []);
 
-  // reset to page 1 whenever the search changes
+  // reset to page 1 w
   useEffect(() => {
     setCurrentPage(0);
   }, [searchTerm]);
 
-  // filter by driver name, race name, circuit, or season
+  // filter by
   const filteredResults = allResults.filter((r) => {
     const q = searchTerm.toLowerCase();
     return (
@@ -134,12 +133,12 @@ function ResultsSection() {
               <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{result.race}</Typography>
               <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>{result.driver}</Typography>
 
-              {/* grid position */}
+              {/* grid pos*/}
               <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                 P{result.grid}
               </Typography>
 
-              {/* finishing position — gold if P1 */}
+              {/* finishing pos, gold if P1 */}
               <Typography sx={{ fontSize: "0.85rem", fontWeight: result.position === "1" ? 700 : 400, color: result.position === "1" ? "#D4AF37" : result.status !== "Finished" && !result.status?.startsWith("+") ? "rgba(255,255,255,0.35)" : "white" }}>
                 {result.status === "Finished" || result.status?.startsWith("+") ? `P${result.position}` : result.status}
               </Typography>
@@ -156,7 +155,7 @@ function ResultsSection() {
           ))}
         </Box>
 
-        {/* pagination */}
+        {/* the pagination*/}
         <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
           <Button
             variant="outlined"

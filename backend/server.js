@@ -10,7 +10,7 @@ app.use(express.json())
 
 const PORT = process.env.PORT || 5000
 
-// health check
+// health checker
 app.get('/', (req, res) => {
   res.send('Backend is running')
 })
@@ -18,15 +18,15 @@ app.get('/', (req, res) => {
 // cache setup
 const CACHE_DURATION = 10 * 60 * 1000
 
-// Ferrari driver numbers by season
+// Ferrari driver numbers
 const FERRARI_DRIVERS = {
   2026: [16, 44], // Leclerc-Hamilton
-  2025: [16, 44], // Leclerc-Hamilton
+  2025: [16, 44],
   2024: [16, 55], // Leclerc-Sainz
-  2023: [16, 55], // Leclerc-Sainz
+  2023: [16, 55],
 }
 
-//CHART: Ferrari points per race 
+//Ferrari points per race 
 let cachedPoints = null
 let cacheTimePoints = null
 
@@ -98,7 +98,6 @@ app.get('/api/ferrari-points', async (req, res) => {
   }
 })
 
-// RESULTS TABLE: All Ferrari constructor results via Jolpica
 // https://api.jolpi.ca/ergast/f1/constructors/ferrari/results.json
 
 let cachedConstructorResults = null
@@ -112,7 +111,7 @@ app.get('/api/ferrari-constructor-results', async (req, res) => {
     }
 
     // paginates at 100 results per request
-    // fetch multiple pages and combine them
+    // fetch multiple pages and combine 
     const allResults = []
     const limit = 100
     let offset = 0
@@ -136,7 +135,7 @@ app.get('/api/ferrari-constructor-results', async (req, res) => {
         console.log(`Total Ferrari results available: ${totalResults}`)
       }
 
-      // each Race object contains Results array with one entry per driver
+      // each Race object contains Results arrwith one entry per driver
       for (const race of table) {
         for (const result of race.Results) {
           allResults.push({
@@ -181,7 +180,7 @@ app.get('/api/ferrari-constructor-results', async (req, res) => {
   }
 })
 
-// 2026 RACE RESULTS (for the stats section)
+// 2026 race results for stats part
 let cachedRaceResults = null
 let cacheTimeResults = null
 
