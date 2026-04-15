@@ -175,8 +175,8 @@ app.get('/api/ferrari-constructor-results', async (req, res) => {
 
     res.status(200).json(allResults)
   } catch (error) {
-    console.error('Error fetching constructor results:', error)
-    res.status(500).json({ message: 'Error fetching constructor results' })
+    console.error('Error fetching constructor results:', error.message)
+    res.status(500).json({ message: error.message })
   }
 })
 
