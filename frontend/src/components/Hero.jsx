@@ -2,12 +2,20 @@ import { Box, Button, Container, Typography } from "@mui/material";
 import ferrariLogo from "../assets/ferrari-logo.png";
 
 function Hero() {
+  // same scroll pattern as the navbar
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <Box sx={{ py: 14 }}>
       <Container maxWidth="lg">
         <Box
           sx={{
-            maxWidth: "820px", // wider so title doesn't feel squeezed
+            maxWidth: "820px",
             position: "relative",
           }}
         >
@@ -85,12 +93,17 @@ function Hero() {
           </Typography>
 
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            <Button variant="contained" color="primary">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => scrollToSection("results")}
+            >
               View Results
             </Button>
 
             <Button
               variant="outlined"
+              onClick={() => scrollToSection("stats")}
               sx={{
                 color: "#F5F5F5",
                 borderColor: "#D4AF37",
