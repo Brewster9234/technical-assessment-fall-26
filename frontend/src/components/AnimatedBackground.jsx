@@ -27,17 +27,18 @@ function AnimatedBackground() {
         zIndex: 0,
         overflow: "hidden",
         pointerEvents: "none",
-        background: "linear-gradient(160deg, #3d000a 0%, #1a0004 45%, #0a0001 100%)",
+        // original red from before
+        background: "linear-gradient(135deg, #5b0010 0%, #7a0018 35%, #4a000d 65%, #190004 100%)",
       }}
     >
-      {/* speed lines shooting left to right */}
+      {/*section for the lines */}
       {speedLines.map((line, i) => (
         <Box
           key={i}
           component={motion.div}
           animate={{
             x: ["0%", "160%"],
-            opacity: [0, 0.6, 0.6, 0],
+            opacity: [0, 0.8, 0.8, 0],
           }}
           transition={{
             duration: line.duration,
@@ -53,29 +54,30 @@ function AnimatedBackground() {
             width: line.width,
             height: "1px",
             background: line.gold
-              ? "linear-gradient(90deg, transparent, rgba(212,175,55,0.8), transparent)"
-              : "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+              ? "linear-gradient(90deg, transparent, rgba(212,175,55,1), transparent)"
+              : "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
           }}
         />
       ))}
+
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)
           `,
           backgroundSize: "80px 80px",
         }}
       />
 
-      {/* edge vignette */}
+      {/*luh vignette on the edge */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.6) 100%)",
+          background: "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.4) 100%)",
         }}
       />
     </Box>
@@ -83,3 +85,4 @@ function AnimatedBackground() {
 }
 
 export default AnimatedBackground;
+
