@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Container, TextField, Typography } from "@mui/material";
-
-const ROWS_PER_PAGE = 20;
+import {
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
 // formats "2024-03-02" into "Mar 2, 2024"
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
@@ -21,12 +27,19 @@ function ResultsSection() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
 
+  // rows per page — user can change this with the dropdown
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
   const fetchResults = async () => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
       const response = await fetch(`${backendUrl}/api/ferrari-constructor-results`);
       const data = await response.json();
-      setAllResults(data);
+      if (Array.isArray(data)) {
+        setAllResults(data);
+      } else {
+        console.error("Unexpected response:", data);
+      }
     } catch (err) {
       console.error("error fetching results:", err);
     } finally {
@@ -38,12 +51,11 @@ function ResultsSection() {
     fetchResults();
   }, []);
 
-  // reset to page 1 w
+  // reset to page 1 when search or rows per page changes
   useEffect(() => {
     setCurrentPage(0);
-  }, [searchTerm]);
+  }, [searchTerm, rowsPerPage]);
 
-  // filter by
   const filteredResults = allResults.filter((r) => {
     const q = searchTerm.toLowerCase();
     return (
@@ -54,11 +66,25 @@ function ResultsSection() {
     );
   });
 
-  const totalPages = Math.ceil(filteredResults.length / ROWS_PER_PAGE);
+  const totalPages = Math.ceil(filteredResults.length / rowsPerPage);
   const pageRows = filteredResults.slice(
-    currentPage * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE + ROWS_PER_PAGE
+    currentPage * rowsPerPage,
+    currentPage * rowsPerPage + rowsPerPage
   );
+
+  // shared button style to avoid repeating it
+  const navButtonSx = {
+    color: "white",
+    borderColor: "rgba(212,175,55,0.35)",
+    borderRadius: 0,
+    px: 2,
+    fontSize: "0.72rem",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    minWidth: "auto",
+    "&:hover": { borderColor: "#D4AF37", backgroundColor: "rgba(212,175,55,0.1)" },
+    "&.Mui-disabled": { color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)" },
+  }
 
   return (
     <Box sx={{ py: 10 }}>
@@ -71,24 +97,47 @@ function ResultsSection() {
           Every Ferrari race result across all seasons — search by driver, circuit, or year.
         </Typography>
 
-        <TextField
-          fullWidth
-          placeholder="Search by driver, race, circuit, or year…"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{
-            mb: 2,
-            input: { color: "white" },
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "rgba(0,0,0,0.3)",
+        {/* search bar + rows per page dropdown side by side */}
+        <Box sx={{ display: "flex", gap: 2, mb: 2, alignItems: "center" }}>
+          <TextField
+            fullWidth
+            placeholder="Search by driver, race, circuit, or year…"
+            variant="outlined"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              input: { color: "white" },
+              "& .MuiOutlinedInput-root": {
+                backgroundColor: "rgba(0,0,0,0.3)",
+                borderRadius: 0,
+                "& fieldset": { borderColor: "rgba(212,175,55,0.35)" },
+                "&:hover fieldset": { borderColor: "#D4AF37" },
+                "&.Mui-focused fieldset": { borderColor: "#D4AF37" },
+              },
+            }}
+          />
+
+          {/* rows per page dropdown */}
+          <Select
+            value={rowsPerPage}
+            onChange={(e) => setRowsPerPage(e.target.value)}
+            variant="outlined"
+            sx={{
+              color: "white",
               borderRadius: 0,
-              "& fieldset": { borderColor: "rgba(212,175,55,0.35)" },
-              "&:hover fieldset": { borderColor: "#D4AF37" },
-              "&.Mui-focused fieldset": { borderColor: "#D4AF37" },
-            },
-          }}
-        />
+              minWidth: 90,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(212,175,55,0.35)" },
+              "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#D4AF37" },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#D4AF37" },
+              "& .MuiSvgIcon-root": { color: "#D4AF37" },
+            }}
+          >
+            <MenuItem value={10}>10 rows</MenuItem>
+            <MenuItem value={20}>20 rows</MenuItem>
+            <MenuItem value={50}>50 rows</MenuItem>
+          </Select>
+        </Box>
 
         <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem", mb: 1.5 }}>
           {filteredResults.length} results — page {currentPage + 1} of {Math.max(totalPages, 1)}
@@ -132,22 +181,15 @@ function ResultsSection() {
             >
               <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{result.race}</Typography>
               <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>{result.driver}</Typography>
-
-              {/* grid pos*/}
               <Typography sx={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                 P{result.grid}
               </Typography>
-
-              {/* finishing pos, gold if P1 */}
               <Typography sx={{ fontSize: "0.85rem", fontWeight: result.position === "1" ? 700 : 400, color: result.position === "1" ? "#D4AF37" : result.status !== "Finished" && !result.status?.startsWith("+") ? "rgba(255,255,255,0.35)" : "white" }}>
                 {result.status === "Finished" || result.status?.startsWith("+") ? `P${result.position}` : result.status}
               </Typography>
-
-              {/* points */}
               <Typography sx={{ fontSize: "0.85rem", color: result.points > 0 ? "white" : "rgba(255,255,255,0.35)" }}>
                 {result.points > 0 ? result.points : "—"}
               </Typography>
-
               <Typography sx={{ fontSize: "0.85rem", color: "#D4AF37", fontWeight: 700 }}>
                 {result.season}
               </Typography>
@@ -155,26 +197,54 @@ function ResultsSection() {
           ))}
         </Box>
 
-        {/* the pagination*/}
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-          <Button
-            variant="outlined"
-            disabled={currentPage === 0}
-            onClick={() => setCurrentPage((p) => p - 1)}
-            sx={{ color: "white", borderColor: "rgba(212,175,55,0.35)", borderRadius: 0, "&:hover": { borderColor: "#D4AF37", backgroundColor: "rgba(212,175,55,0.1)" }, "&.Mui-disabled": { color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)" } }}
-          >
-            ← Previous
-          </Button>
-          <Button
-            variant="outlined"
-            disabled={currentPage >= totalPages - 1}
-            onClick={() => setCurrentPage((p) => p + 1)}
-            sx={{ color: "white", borderColor: "rgba(212,175,55,0.35)", borderRadius: 0, "&:hover": { borderColor: "#D4AF37", backgroundColor: "rgba(212,175,55,0.1)" }, "&.Mui-disabled": { color: "rgba(255,255,255,0.2)", borderColor: "rgba(255,255,255,0.1)" } }}
-          >
-            Next →
-          </Button>
-        </Box>
+        {/* pagination — jump to start, previous, next, jump to end */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 3 }}>
 
+          {/* left side — jump to beginning + previous */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              disabled={currentPage === 0}
+              onClick={() => setCurrentPage(0)}
+              sx={navButtonSx}
+            >
+              ⟨⟨
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={currentPage === 0}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              sx={navButtonSx}
+            >
+              ← Prev
+            </Button>
+          </Box>
+
+          <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+            {currentPage + 1} / {Math.max(totalPages, 1)}
+          </Typography>
+
+          {/* right side — next + jump to end */}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              disabled={currentPage >= totalPages - 1}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              sx={navButtonSx}
+            >
+              Next →
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={currentPage >= totalPages - 1}
+              onClick={() => setCurrentPage(totalPages - 1)}
+              sx={navButtonSx}
+            >
+              ⟩⟩
+            </Button>
+          </Box>
+
+        </Box>
       </Container>
     </Box>
   );
